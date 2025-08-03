@@ -7,10 +7,8 @@
 #include "lib/bytes/reader.hh"
 #include "lib/bytes/typed_reader.hh"
 #include "lib/bytes/array/basic.hh"
-#include "lib/bytes/array/struct.hh"
 
 #include "lib/formats/brres/parser.hh"
-#include "lib/formats/brres/string_table.hh"
 #include "lib/formats/brres/types.hh"
 
 #include "types.hh"
@@ -68,7 +66,7 @@ int main(
   uint16_t bom = header.get(&Header::bom);
   if (bom != 0xFEFF) {
     binary.swap_endianness();
-    bom = header.get(&Header::bom);
+    LOG(INFO) << "Endianness mismatch - reader will automatically swap the byte order";
   }
 
   const uint16_t section_count = header.get(&Header::num_sections);
@@ -93,24 +91,10 @@ int main(
       << magic[2]
       << magic[3];
   }
-
-  struct_reader<IndexGroupHeader> index_group_header = reader.read<IndexGroupHeader>(
-    root_section_offset + sizeof(RootSectionHeader)
-  );
-
-  uint32_t members = index_group_header.get(&IndexGroupHeader::members);
-
-  LOG(INFO) << "root members: " << members;
-  LOG(INFO) << "root size: " << index_group_header.get(&IndexGroupHeader::byte_length);
-
-  struct_array<IndexGroup> group_array = reader.read<IndexGroup[]>(
-    root_section_offset + sizeof(RootSectionHeader) + sizeof(IndexGroupHeader)
-  );
-
+  
   size_t base_offset = root_section_offset + sizeof(RootSectionHeader);
-  string_table table(reader, base_offset);  
-
   parser index_group_parser(reader);
+
   fs_entry& root = index_group_parser.consume(base_offset);
   print_tree(root, 0);
 
@@ -123,7 +107,7 @@ void print_tree(
   int depth
 ) {
   for(auto& child : root.children()) {
-    std::string repeated(depth, '  ');
+    std::string repeated(depth * 2, ' ');
     LOG(INFO) << repeated << child.name();
     print_tree(child, depth + 1);
   }
