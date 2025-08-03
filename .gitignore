@@ -1,0 +1,6 @@
+bazel-*
+.bazelrc
+
+glf_course_fc1.brres
+shell.nix
+.vscode/
