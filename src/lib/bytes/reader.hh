@@ -39,7 +39,6 @@ public:
     static_assert(std::is_arithmetic<T>::value, "T must be a fundamental value");
 
     const size_t size = sizeof(T);
-    const bool out_of_bounds = position + size > _len;
 
     CHECK(position + size <= _len)  
       << "Position " << position << " is out of bounds (max:" << _len << ")";
