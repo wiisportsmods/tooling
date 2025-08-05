@@ -1,4 +1,5 @@
 #include <fstream>
+#include <stdlib.h>
 
 #include "absl/log/log.h"
 #include "absl/log/check.h"
@@ -17,6 +18,18 @@ void print_tree(
   fs_entry& root,
   int depth
 );
+
+std::string format_size(size_t byte_length) {
+  static const std::array<const std::string, 4> size_lookup = {"b", "kb", "mb", "gb"};
+
+  size_t index = 0;
+  while(byte_length > 1023) {
+    byte_length /= 1024;
+    index = std::min(index + 1, (size_t)3);
+  }
+
+  return absl::StrFormat("%d%s", byte_length, size_lookup[index]);
+}
 
 int main(
   int argc,
@@ -37,6 +50,8 @@ int main(
   file.seekg(0, std::ios::beg);
 
   CHECK(len != 0) << "Empty file";
+  
+  LOG(INFO) << "File size: " << format_size(len);
 
   char* buffer = new char[len+1];
 
