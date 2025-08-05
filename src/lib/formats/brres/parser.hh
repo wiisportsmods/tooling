@@ -1,32 +1,36 @@
 #ifndef _LIB_FORMATS_BRRES_PARSER_HH
 #define _LIB_FORMATS_BRRES_PARSER_HH
 
-#include <vector>
+#include <list>
 
 #include "lib/bytes/typed_reader.hh"
 
-#include "fs_entry.hh"
+
+#include "nodes/data.hh"
+#include "nodes/folder.hh"
+#include "nodes/root.hh"
+
 #include "string_table.hh"
 
 class parser {
   const typed_reader& _reader;
 
-  // We can iterate over the binary to calculate the size of this
-  // to reserve before creation, but for now we don't do this.
-  std::vector<fs_entry> _entries;
+  std::list<folder> _folders;
+  std::list<data> _files;
 
 private:
-  void consume_children(
-    fs_entry& parent,
-    size_t offset
-  );
+  template <typename TParent>
+  std::vector<std::reference_wrapper<node>> consume_internal(size_t offset);
 
 public:
   parser(
     const typed_reader& reader
   ) : _reader(reader) {}
 
-  fs_entry& consume(const size_t base_offset);
+  root consume(const size_t base_offset);
+
+  const std::list<data>& files() const;
+  const std::list<folder>& folders() const;
 };
 
 

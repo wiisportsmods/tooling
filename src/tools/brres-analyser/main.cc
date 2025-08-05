@@ -1,4 +1,5 @@
 #include <fstream>
+#include <filesystem>
 #include <stdlib.h>
 
 #include "absl/log/log.h"
@@ -8,14 +9,17 @@
 #include "lib/bytes/reader.hh"
 #include "lib/bytes/typed_reader.hh"
 #include "lib/bytes/array/basic.hh"
+#include "lib/bytes/array/basic.hh"
 
 #include "lib/formats/brres/parser.hh"
+#include "lib/formats/brres/nodes/node.hh"
 #include "lib/formats/brres/types.hh"
 
 #include "types.hh"
 
 void print_tree(
-  fs_entry& root,
+  typed_reader& reader,
+  const node& curr,
   int depth
 );
 
@@ -39,7 +43,8 @@ int main(
 
   std::string source(argv[1]);
 
-  LOG(INFO) << "Opening " << source;
+  LOG(INFO) << "Opening " << source << 
+    "(cwd=" << std::filesystem::current_path() << ")";
   
   std::ifstream file(source);
 
@@ -110,20 +115,34 @@ int main(
   size_t base_offset = root_section_offset + sizeof(RootSectionHeader);
   parser index_group_parser(reader);
 
-  fs_entry& root = index_group_parser.consume(base_offset);
-  print_tree(root, 0);
+  root root = index_group_parser.consume(base_offset);
+  print_tree(reader, root, 0);
 
   file.close();
   delete[] buffer;
 }
 
 void print_tree(
-  fs_entry& root,
+  typed_reader& reader,
+  const node& curr,
   int depth
 ) {
-  for(auto& child : root.children()) {
-    std::string repeated(depth * 2, ' ');
-    LOG(INFO) << repeated << child.name();
-    print_tree(child, depth + 1);
+  std::string repeated(depth * 2, ' ');
+
+  try {
+    auto it = dynamic_cast<const data&>(curr);
+    basic_array<char> magic = reader.read<char[]>(it.offset());
+
+    LOG(INFO) << repeated << curr.name () << " (" << magic.at(0) << magic.at(1) << magic.at(2) << magic.at(3) << ")"; 
+  } catch (std::bad_cast& e) {
+    LOG(INFO) << repeated << curr.name();
+  }
+
+  if (!curr.children()) {
+    return;
+  }
+
+  for(const auto& child : curr.children().value().get()) {
+    print_tree(reader, child, depth + 1);
   }
 }

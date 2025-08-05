@@ -7,8 +7,8 @@ cc_library(
 
 cc_library(
   name = "brres",
-  srcs = glob(["*.cc"]),
-  hdrs = glob(["*.hh"]),
+  srcs = glob(["*.cc", "nodes/*.cc"]),
+  hdrs = glob(["*.hh", "nodes/*.hh"]),
   includes = ["."],
   copts = ["-std=c++20"],
   strip_include_prefix = "/src",

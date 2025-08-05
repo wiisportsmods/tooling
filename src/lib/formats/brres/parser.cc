@@ -1,33 +1,21 @@
 #include "parser.hh"
 #include "types.hh"
 
+#include "nodes/node.hh"
+#include "nodes/root.hh"
+#include "nodes/folder.hh"
+#include "nodes/data.hh"
+
 #include "absl/log/log.h"
 
 #include <iostream>
 
-fs_entry& parser::consume(const size_t base_offset) {
-  // The base entry, used to represent the root of this.
-
-  DLOG(INFO) << "Consuming Index Groups";
-
-  fs_entry root("__root__", true);
-  _entries.emplace_back(root);
-  fs_entry& base = _entries.back();
-
-  DLOG(INFO) << "Consuming Children (call)";
-
-  consume_children(
-    base,
-    base_offset
-  );
-
-  return _entries[0];
+root parser::consume(const size_t base_offset) {
+  return root(consume_internal<root>(base_offset));
 }
 
-void parser::consume_children(
-  fs_entry& parent,
-  size_t offset
-) {
+template <typename TParent>
+std::vector<std::reference_wrapper<node>> parser::consume_internal(size_t offset) {
   struct_reader<IndexGroupHeader> header = _reader.read<IndexGroupHeader>(
     offset
   );
@@ -36,7 +24,7 @@ void parser::consume_children(
   uint32_t count = header.get(&IndexGroupHeader::members);
   uint32_t byte_size = header.get(&IndexGroupHeader::byte_length);
 
-  DLOG(INFO) << "Consuming Children of " << parent.name() << "\n"
+  DLOG(INFO) << "Consuming group" << "\n"
     << "byte_size(" << byte_size << ")" << "\n"
     << "count(" << count << ")" << "\n"
     << "offset(" << offset << ")";
@@ -45,9 +33,11 @@ void parser::consume_children(
     offset + sizeof(IndexGroupHeader)
   );
 
+  std::vector<std::reference_wrapper<node>> children;
+  children.reserve(count);
+
   for(uint32_t i = 1; i < count + 1; i++) {
     struct_reader<IndexGroup> group = groups.at(i);
-
 
     std::string name = table.copy(
       group.get(&IndexGroup::name_ptr)
@@ -60,13 +50,32 @@ void parser::consume_children(
       << "\t" << "name_ptr(" << group.get(&IndexGroup::name_ptr) << ")" << "\n"
       << "\t" << "data_ptr(" << group.get(&IndexGroup::data_ptr) << ")";
 
-    parent.children().emplace_back(name, false);
+    if constexpr (std::is_same_v<TParent, root>) {
+      _folders.emplace_back(
+        name,
+        consume_internal<folder>(offset + group.get(&IndexGroup::data_ptr))
+      );
+
+      children.emplace_back(std::ref(_folders.back()));
+    }
     
-    if (parent.root()) {
-      consume_children(
-        parent.children().back(),
+    if constexpr (std::is_same_v<TParent, folder>) {
+      _files.emplace_back(
+        name,
         offset + group.get(&IndexGroup::data_ptr)
       );
+
+      children.emplace_back(std::ref(_files.back()));
     }
   }
+
+  return children;
+}
+
+const std::list<data>& parser::files() const {
+  return _files;
+}
+
+const std::list<folder>& parser::folders() const {
+  return _folders;
 }
