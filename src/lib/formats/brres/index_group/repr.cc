@@ -6,6 +6,7 @@
 #include "lib/bytes/typed_reader.hh"
 
 #include "nodes/data.hh"
+#include "nodes/folder.hh"
 
 static std::string _repr(
   std::optional<std::reference_wrapper<const typed_reader>> reader,
@@ -57,6 +58,10 @@ static void _repr_recurse(
 ) {
   std::string repeated(depth * 2, ' ');
 
+  // If we have a reader, and the node is a `data`, 
+  // try and output the `magic` for the file.
+  //
+  // If not, simply output the name.
   if (reader) {
     try {
       auto it = dynamic_cast<const data&>(curr);
@@ -72,16 +77,17 @@ static void _repr_recurse(
     stream << repeated << curr.name() << '\n';
   }
 
-  if (!curr.children()) {
-    return;
-  }
+  // If it's a `folder`, print its children.
+  try {
+    auto it = dynamic_cast<const folder&>(curr);
 
-  for(const auto& child : curr.children().value().get()) {
-    _repr_recurse(
-      stream,
-      reader,
-      child,
-      depth + 1
-    );
-  }
+     for(const auto& child : it.children()) {
+      _repr_recurse(
+        stream,
+        reader,
+        child,
+        depth + 1
+      );
+    }
+  } catch (std::bad_cast& e) {};
 }

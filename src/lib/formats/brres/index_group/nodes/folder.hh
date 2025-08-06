@@ -20,7 +20,7 @@ public:
     : _name(name), _children(children) {}
 
   const std::string& name() const override;
-  const std::optional<std::reference_wrapper<const std::vector<std::reference_wrapper<node>>>> children() const override;
+  const std::vector<std::reference_wrapper<node>>& children() const;
 };
 
 #endif /* _LIB_FORMATS_BRRES_HH */

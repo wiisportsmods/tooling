@@ -17,7 +17,6 @@ public:
   ) : _name(name), _offset(offset) {}
 
   const std::string& name() const override;
-  const std::optional<std::reference_wrapper<const std::vector<std::reference_wrapper<node>>>> children() const override;
   const size_t offset();
 };
 
