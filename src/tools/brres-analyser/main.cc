@@ -11,8 +11,9 @@
 #include "lib/bytes/array/basic.hh"
 #include "lib/bytes/array/basic.hh"
 
-#include "lib/formats/brres/parser.hh"
-#include "lib/formats/brres/nodes/node.hh"
+#include "lib/formats/brres/index_group/parser.hh"
+#include "lib/formats/brres/index_group/nodes/node.hh"
+#include "lib/formats/brres/index_group/repr.hh"
 #include "lib/formats/brres/types.hh"
 
 #include "types.hh"
@@ -94,8 +95,8 @@ int main(
 
   const uint16_t root_section_offset = header.get(&Header::root_offset);
   
+  struct_reader<RootSectionHeader> root_header = reader.read<RootSectionHeader>(root_section_offset);
   {
-    struct_reader<RootSectionHeader> root_header = reader.read<RootSectionHeader>(root_section_offset);
     basic_array<char> magic_reader = root_header.get(&RootSectionHeader::magic);
 
     char magic[4] = {
@@ -113,36 +114,40 @@ int main(
   }
   
   size_t base_offset = root_section_offset + sizeof(RootSectionHeader);
-  parser index_group_parser(reader);
+  parser index_group_parser(
+    reader,
+    base_offset,
+    (size_t)root_header.get<uint32_t>(&RootSectionHeader::byte_length)
+  );
 
-  root root = index_group_parser.consume(base_offset);
-  print_tree(reader, root, 0);
+  folder brres_root = index_group_parser.consume();
+  LOG(INFO) << repr(brres_root, reader);
 
   file.close();
   delete[] buffer;
 }
 
-void print_tree(
-  typed_reader& reader,
-  const node& curr,
-  int depth
-) {
-  std::string repeated(depth * 2, ' ');
+// void print_tree(
+//   typed_reader& reader,
+//   const node& curr,
+//   int depth
+// ) {
+//   std::string repeated(depth * 2, ' ');
 
-  try {
-    auto it = dynamic_cast<const data&>(curr);
-    basic_array<char> magic = reader.read<char[]>(it.offset());
+//   try {
+//     auto it = dynamic_cast<const data&>(curr);
+//     basic_array<char> magic = reader.read<char[]>(it.offset());
 
-    LOG(INFO) << repeated << curr.name () << " (" << magic.at(0) << magic.at(1) << magic.at(2) << magic.at(3) << ")"; 
-  } catch (std::bad_cast& e) {
-    LOG(INFO) << repeated << curr.name();
-  }
+//     LOG(INFO) << repeated << curr.name () << " (" << magic.at(0) << magic.at(1) << magic.at(2) << magic.at(3) << ")"; 
+//   } catch (std::bad_cast& e) {
+//     LOG(INFO) << repeated << curr.name();
+//   }
 
-  if (!curr.children()) {
-    return;
-  }
+//   if (!curr.children()) {
+//     return;
+//   }
 
-  for(const auto& child : curr.children().value().get()) {
-    print_tree(reader, child, depth + 1);
-  }
-}
+//   for(const auto& child : curr.children().value().get()) {
+//     print_tree(reader, child, depth + 1);
+//   }
+// }

@@ -6,9 +6,9 @@ cc_library(
 )
 
 cc_library(
-  name = "brres",
-  srcs = glob(["*.cc"]),
-  hdrs = glob(["*.hh"]),
+  name = "index_group",
+  srcs = glob(["*.cc", "nodes/*.cc"]),
+  hdrs = glob(["*.hh", "nodes/*.hh"]),
   includes = ["."],
   copts = ["-std=c++20"],
   strip_include_prefix = "/src",
@@ -17,6 +17,7 @@ cc_library(
     "@com_google_absl//absl/log",
     "@com_google_absl//absl/log:check",
     "//src/lib/bytes",
+    "//src/lib/formats/brres",
     ":stdlib",
   ],
 )

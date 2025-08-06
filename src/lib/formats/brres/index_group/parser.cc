@@ -2,7 +2,6 @@
 #include "types.hh"
 
 #include "nodes/node.hh"
-#include "nodes/root.hh"
 #include "nodes/folder.hh"
 #include "nodes/data.hh"
 
@@ -10,12 +9,21 @@
 
 #include <iostream>
 
-root parser::consume(const size_t base_offset) {
-  return root(consume_internal<root>(base_offset));
+bool parser::is_group(size_t offset) {
+  if (!_length) {
+    return false;
+  }
+
+  return offset <= (*_length);
 }
 
-template <typename TParent>
-std::vector<std::reference_wrapper<node>> parser::consume_internal(size_t offset) {
+folder parser::consume() {
+  return folder("(root)", consume_internal(_base_offset));
+}
+
+std::vector<std::reference_wrapper<node>> parser::consume_internal(
+  size_t offset
+) {
   struct_reader<IndexGroupHeader> header = _reader.read<IndexGroupHeader>(
     offset
   );
@@ -44,29 +52,33 @@ std::vector<std::reference_wrapper<node>> parser::consume_internal(size_t offset
     );
 
     DLOG(INFO) << "IndexGroup(\"" << name << "\")" << "\n"
+      << "\t" << "flag(" << group.get(&IndexGroup::flag) << ")" << "\n"
       << "\t" << "left_idx(" << group.get(&IndexGroup::left_index) << ")" << "\n"
       << "\t" << "right_idx(" << group.get(&IndexGroup::right_index) << ")" << "\n"
       << "\t" << "entry_id(" << group.get(&IndexGroup::entry_id) << ")" << "\n"
       << "\t" << "name_ptr(" << group.get(&IndexGroup::name_ptr) << ")" << "\n"
       << "\t" << "data_ptr(" << group.get(&IndexGroup::data_ptr) << ")";
 
-    if constexpr (std::is_same_v<TParent, root>) {
+    int32_t data_ptr = group.get(&IndexGroup::data_ptr);
+    size_t data_offset = offset + data_ptr;
+
+    // If it's within the bounds specified by the root,
+    // then we must be in
+    if (is_group(data_offset)) {
       _folders.emplace_back(
         name,
-        consume_internal<folder>(offset + group.get(&IndexGroup::data_ptr))
+        consume_internal(data_offset)
       );
 
       children.emplace_back(std::ref(_folders.back()));
-    }
-    
-    if constexpr (std::is_same_v<TParent, folder>) {
+    } else {
       _files.emplace_back(
         name,
         offset + group.get(&IndexGroup::data_ptr)
       );
 
       children.emplace_back(std::ref(_files.back()));
-    }
+    } 
   }
 
   return children;
