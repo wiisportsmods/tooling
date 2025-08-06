@@ -5,12 +5,23 @@
 #include <optional>
 
 /**
- * Represents a `node` in the file system, which can have a name, and children.
+ * Represents a `node` in the file system, which has a name.
  * 
+ * To get more specific information, cast this to a concrete type
+ * using `dynamic_cast`.
+ * 
+ * @interface
  */
 class node {
 public:
   virtual ~node() = default;
+
+  /**
+   * Returns the name of this node. All nodes have a name. The root node 
+   * is given a special name, `(root)`, identifying it as the root node.
+   * 
+   * Do not rely on the `(root)` name to deliminate the root node from others.
+   */
   virtual const std::string& name() const = 0;
 };
 

@@ -12,8 +12,18 @@ class typed_reader {
   byte_reader& _reader;
 
 public:
+  /**
+   * Constructs a `typed_reader`, using a `byte_reader` to 
+   * provide the basis of all behaviours.
+   */
   typed_reader(byte_reader& reader) : _reader(reader) {}
 
+  /**
+   * Reads an arithmetic `T` at `position` in the buffer, swapping
+   * endainness as required.
+   * 
+   * @returns The value at `position`.
+   */
   template <
     typename T,
     typename std::enable_if<std::is_arithmetic<T>::value, int>::type = 0
@@ -22,6 +32,12 @@ public:
     return _reader.read<T>(position);
   }
 
+  /**
+   * Reads a struct `T` at `position` in the buffer, as a `struct_reader<T>`, 
+   * swapping endainness as required.
+   * 
+   * @returns The struct reader.
+   */
   template <
     typename T,
     typename std::enable_if<std::is_class<T>::value, int>::type = 0
@@ -32,6 +48,12 @@ public:
   }
 
 
+  /**
+   * Reads an array of arithmetics `T` at `position` in the buffer, as a `basic_array<T>`, 
+   * swapping endainness as required.
+   * 
+   * @returns The `basic_array` reader.
+   */
   template <typename T,
     typename std::enable_if<
         std::is_array<T>::value &&
@@ -45,7 +67,12 @@ public:
     return reader;
   }
 
-
+  /**
+   * Reads an array of structs `T` at `position` in the buffer, as a `struct_array<T>`, 
+   * swapping endainness as required.
+   * 
+   * @returns The `struct_array` reader.
+   */
   template <typename T,
     typename std::enable_if<
         std::is_array<T>::value &&

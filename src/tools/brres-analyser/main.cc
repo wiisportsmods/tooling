@@ -18,6 +18,9 @@
 
 #include "types.hh"
 
+/**
+ * Format a number of `bytes` as a string w/ units.
+ */
 std::string format_size(size_t byte_length) {
   static const std::array<const std::string, 4> size_lookup = {"b", "kb", "mb", "gb"};
 
@@ -60,6 +63,7 @@ int main(
 
   file.read(buffer.get(), len);
 
+  // Create readers over the binary.
   byte_reader binary(std::move(buffer), len);
 
   typed_reader reader(binary);
@@ -73,9 +77,11 @@ int main(
       magic_reader.at(3)
     };
 
+    // `brres` files always start with `bres` in the first four bytes.
     CHECK(memcmp(magic, "bres", 4) == 0)  << "Invalid file magic";
   }
 
+  // Read information about the file (bom, sections, offset to the root, etc).
   struct_reader<Header> header = reader.read<Header>(0);
 
   uint16_t bom = header.get(&Header::bom);
@@ -100,6 +106,7 @@ int main(
       magic_reader.at(3)
     };
 
+    // `root` sections always have a magic of `root`.
     CHECK(memcmp(magic, "root", 4) == 0)  << "Invalid section magic: "
       << magic[0]
       << magic[1]
@@ -107,6 +114,7 @@ int main(
       << magic[3];
   }
   
+  // Create a BRRES `Index Group` parser, and parse out the values.
   parser index_group_parser(
     reader,
     root_section_offset + sizeof(RootSectionHeader),
@@ -115,5 +123,6 @@ int main(
 
   folder brres_root = index_group_parser.consume();
   
+  // Show the tree of files.
   LOG(INFO) << repr(brres_root, reader);
 }

@@ -8,11 +8,24 @@
 #include "nodes/data.hh"
 #include "nodes/folder.hh"
 
+/**
+ * The implementation of `repr`, taking a `reader` and the `curr` node.
+ * Called by overloads of `repr` based on what parameters they have.
+ */
 static std::string _repr(
   std::optional<std::reference_wrapper<const typed_reader>> reader,
   const node& curr
 );
 
+/**
+ * Walks the filesystem (DFS) to produce a tree, based on the current `depth`. `_repr` calls this with the appropriate values. 
+ * Writes to the `stream` to produce output.
+ * 
+ * @param stream The stream to write results to.
+ * @param reader The (optional) reader used to read file magics.
+ * @param curr The current node.
+ * @param depth The current depth.
+ */
 static void _repr_recurse(
   std::ostringstream& stream,
   std::optional<std::reference_wrapper<const typed_reader>> reader,
@@ -20,6 +33,10 @@ static void _repr_recurse(
   int depth
 );
 
+/**
+ * Produces the representation of the filesystem at `curr` as a tree.
+ * Uses `reader` to read file magics.
+ */
 const std::string repr(const node& root, const typed_reader& reader) {
   return _repr(
     std::cref(reader),
@@ -27,6 +44,9 @@ const std::string repr(const node& root, const typed_reader& reader) {
   );
 }
 
+/**
+ * Produces the representation of the filesystem at `curr` as a tree.
+ */
 const std::string repr(const node& root) {
   return _repr(
     std::nullopt,

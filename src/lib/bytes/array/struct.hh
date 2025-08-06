@@ -14,11 +14,19 @@ class struct_array {
   const size_t _base_offset;
 
 public:
+  /**
+   * Constructs a reader of an array of structs, starting at `base_offset`.
+   */
   struct_array(
     byte_reader& reader,
     const size_t base_offset
   ) : _reader(reader), _base_offset(base_offset) {}
 
+  /**
+   * Returns a reader of the struct at `index` relative to `base_offset`.
+   * 
+   * @returns The value at `index`.
+   */
   struct_reader<T> at(const size_t index) const {
     const size_t offset = _base_offset + (index * sizeof(T));
 

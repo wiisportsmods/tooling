@@ -1,5 +1,10 @@
 #include "id.hh"
 
+/**
+ * Gets the highest bit of this `uint8_t` value.
+ * 
+ * @todo Account for endianness.
+ */
 static inline uint16_t get_highest_bit(uint8_t value) {
   uint16_t i;
   for(i = 7; i > 0 && !(value & 0x80); i--, value <<= 1)
@@ -8,6 +13,7 @@ static inline uint16_t get_highest_bit(uint8_t value) {
   return value;
 }
 
+// Via https://wiki.tockdom.com/wiki/BRRES_Index_Group_(File_Format)
 const uint16_t get_brres_id(
   std::string_view& object,
   std::string_view& subject

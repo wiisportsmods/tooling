@@ -10,17 +10,49 @@
 #include <span>
 #include <memory>
 
+/**
+ * A simple reader that can handle `arithmetic` types (based on `std::is_arithmetic`).
+ * Handles swapping endianness if a desired endianness is specified.
+ * 
+ * If you need to handle more complex types (structs, arrays), see `typed_reader`.
+ * 
+ * Most usage of this is through composition w/ `typed_reader`.
+ */
 class byte_reader {
+  /**
+   * The owned buffer to read from.
+   */
   std::unique_ptr<char[]> _data;
+
+  /**
+   * The length of the buffer.
+   */
   const size_t _len;
+  
+  /**
+   * The preferred endianness, if known.
+   */
   std::optional<Endianness> _endianness;
 
 public:
+  /** 
+   * Creates a reader that is unaware of the endianness of the data. 
+   * 
+   * @param buffer The buffer to read from.
+   * @param len The length of the buffer.
+   */
   byte_reader(
     std::unique_ptr<char[]> buffer, 
     size_t len
   ) : _data(std::move(buffer)), _len(len) {};
 
+  /**
+   * Creates a reader that is aware of the endianness of the data.
+   * 
+   * @param buffer The buffer to read from.
+   * @param len The length of the buffer.
+   * @param endianness The endianness to convert values to.
+   */
   byte_reader(
     std::unique_ptr<char[]> buffer,
     const size_t len,
@@ -29,12 +61,20 @@ public:
     _endianness = endianness;
   }
 
+  // No move
   byte_reader&& operator=(byte_reader&& other) = delete;
   byte_reader(byte_reader&& other) = delete;
 
+  // No copy
   byte_reader& operator=(byte_reader& other) = delete;
   byte_reader(const byte_reader& rhs) = delete;
 
+  /**
+   * Reads a `T` from the buffer at `position`, provided `T` is an
+   * arithmetic value (via `std::is_arithmetic`).
+   * 
+   * Asserts that there is no out of bounds reading happening.
+   */
   template <typename T> 
   T read(const size_t position) {
     static_assert(std::is_arithmetic<T>::value, "T must be a fundamental value");
@@ -58,6 +98,11 @@ public:
     return data;
   }
 
+  /**
+   * Returns a span of `len` at `position` of type `T`.
+   * 
+   * Asserts there is no out of bounds reading happening.
+   */
   template <typename T>
   T* span(const size_t position, const size_t len) {
     const size_t size = sizeof(T);

@@ -3,6 +3,9 @@
 
 #include <stdlib.h>
 
+/**
+ * The header of a `BRRES` file.
+ */
 struct Header {
   char magic[4];
   uint16_t bom;
@@ -12,25 +15,12 @@ struct Header {
   uint16_t num_sections;
 };
 
+/**
+ * The header of the `root` section of a `BRRES` file.
+ */
 struct RootSectionHeader {
   char magic[4];
   uint32_t byte_length;
 };
-
-struct IndexGroupHeader {
-  uint32_t byte_length;
-  uint32_t members;
-};
-
-struct IndexGroup {
-  uint16_t entry_id;
-  uint16_t flag;
-  uint16_t left_index;
-  uint16_t right_index;
-  int32_t name_ptr;
-  int32_t data_ptr;
-};
-
-static_assert(sizeof(IndexGroup) == 0x10);
 
 #endif /* _LIB_FORMATS_BRRES_TYPES_HH */
