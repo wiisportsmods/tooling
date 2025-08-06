@@ -18,12 +18,6 @@
 
 #include "types.hh"
 
-void print_tree(
-  typed_reader& reader,
-  const node& curr,
-  int depth
-);
-
 std::string format_size(size_t byte_length) {
   static const std::array<const std::string, 4> size_lookup = {"b", "kb", "mb", "gb"};
 
@@ -113,38 +107,13 @@ int main(
       << magic[3];
   }
   
-  size_t base_offset = root_section_offset + sizeof(RootSectionHeader);
   parser index_group_parser(
     reader,
-    base_offset,
+    root_section_offset + sizeof(RootSectionHeader),
     (size_t)root_header.get<uint32_t>(&RootSectionHeader::byte_length)
   );
 
   folder brres_root = index_group_parser.consume();
+  
   LOG(INFO) << repr(brres_root, reader);
 }
-
-// void print_tree(
-//   typed_reader& reader,
-//   const node& curr,
-//   int depth
-// ) {
-//   std::string repeated(depth * 2, ' ');
-
-//   try {
-//     auto it = dynamic_cast<const data&>(curr);
-//     basic_array<char> magic = reader.read<char[]>(it.offset());
-
-//     LOG(INFO) << repeated << curr.name () << " (" << magic.at(0) << magic.at(1) << magic.at(2) << magic.at(3) << ")"; 
-//   } catch (std::bad_cast& e) {
-//     LOG(INFO) << repeated << curr.name();
-//   }
-
-//   if (!curr.children()) {
-//     return;
-//   }
-
-//   for(const auto& child : curr.children().value().get()) {
-//     print_tree(reader, child, depth + 1);
-//   }
-// }
