@@ -8,23 +8,24 @@
 #include <stddef.h>
 #include <optional>
 #include <span>
+#include <memory>
 
 class byte_reader {
-  const char* _data;
+  std::unique_ptr<char[]> _data;
   const size_t _len;
   std::optional<Endianness> _endianness;
 
 public:
   byte_reader(
-    const char* buffer, 
-    const size_t len
-  ) : _data(buffer), _len(len) {};
+    std::unique_ptr<char[]> buffer, 
+    size_t len
+  ) : _data(std::move(buffer)), _len(len) {};
 
   byte_reader(
-    const char* buffer,
+    std::unique_ptr<char[]> buffer,
     const size_t len,
     const Endianness endianness
-  ) : byte_reader(buffer, len) {
+  ) : byte_reader(std::move(buffer), len) {
     _endianness = endianness;
   }
 
@@ -44,7 +45,7 @@ public:
       << "Position " << position << " is out of bounds (max:" << _len << ")";
       
     T data = *reinterpret_cast<const T*>(
-      _data + position
+      _data.get() + position
     );
 
     if (_endianness.has_value()) {
@@ -65,7 +66,7 @@ public:
       << "Position " << position << "is out of bounds (max:" << _len << ")";
 
 
-    std::span span(_data + position, len);
+    std::span span(_data.get() + position, len);
     return span;
   }
     

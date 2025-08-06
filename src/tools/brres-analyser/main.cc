@@ -59,14 +59,14 @@ int main(
   
   LOG(INFO) << "File size: " << format_size(len);
 
-  char* buffer = new char[len+1];
-
+  std::unique_ptr<char[]> buffer = std::make_unique<char[]>(len + 1);
   CHECK(buffer != nullptr) << "Failed to allocate buffer";
+
   buffer[len] = '\0';
 
-  file.read(buffer, len);
+  file.read(buffer.get(), len);
 
-  byte_reader binary(buffer, len);
+  byte_reader binary(std::move(buffer), len);
 
   typed_reader reader(binary);
   {
@@ -122,9 +122,6 @@ int main(
 
   folder brres_root = index_group_parser.consume();
   LOG(INFO) << repr(brres_root, reader);
-
-  file.close();
-  delete[] buffer;
 }
 
 // void print_tree(
