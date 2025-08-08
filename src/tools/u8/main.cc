@@ -19,6 +19,13 @@
 
 #include <iostream>
 
+void write(
+  const byte_reader& reader,
+  const std::filesystem::path base,
+  const node& curr,
+  const std::filesystem::path path
+);
+
 /**
  * Format a number of `bytes` as a string w/ units.
  */
@@ -38,9 +45,10 @@ int main(
   int argc,
   char** argv
 ) {
-  CHECK(argc == 2) << "Invalid usage";
+  CHECK(argc == 3) << "Invalid usage";
 
   std::string source(argv[1]);
+  std::string destination(argv[2]);
 
   LOG(INFO) << "Opening " << source << 
     "(cwd=" << std::filesystem::current_path() << ")";
@@ -81,4 +89,48 @@ int main(
   folder& root = u8_parser.consume();
 
   LOG(INFO) << repr(root);
+
+  std::filesystem::path base_dir(destination);
+
+  LOG(INFO) << "Cleaning " << destination;
+  std::filesystem::remove_all(destination);
+  std::filesystem::create_directory(base_dir);
+
+  LOG(INFO) << "Writing " << destination;
+  write(u8_reader, destination, root, destination);
+}
+
+void write(
+  const byte_reader& reader,
+  const std::filesystem::path base,
+  const node& curr,
+  const std::filesystem::path path
+) {
+  try {
+    const file& f = dynamic_cast<const file&>(curr);
+
+    const std::filesystem::path dir(path / f.name());
+    LOG(INFO) << "Creating file " << dir;
+
+    std::ofstream file(dir);
+    std::span<char> span = reader.span<char>(f.offset(), f.size());
+
+    file.write(span.data(), span.size());
+  } catch (std::bad_cast& e) {}
+
+  try {
+    const folder& f = dynamic_cast<const folder&>(curr);
+
+    const std::filesystem::path dir(path / f.name());
+
+    LOG(INFO) << "Creating directory " << dir;
+
+    if (!std::filesystem::is_directory(dir)) {
+      std::filesystem::create_directories(dir);
+    }
+
+    for(const auto& child : f.children()) {
+      write(reader, base, child, dir);
+    }
+  } catch (std::bad_cast& e) {}
 }
