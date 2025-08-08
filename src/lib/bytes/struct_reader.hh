@@ -29,7 +29,7 @@ public:
   /**
    * Returns the base offset of this reader.
    */
-  const inline size_t offset() {
+  const inline size_t offset() const {
     return _base_offset;
   }
 
