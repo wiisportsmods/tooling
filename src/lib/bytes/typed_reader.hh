@@ -18,6 +18,8 @@ public:
    */
   typed_reader(byte_reader& reader) : _reader(reader) {}
 
+  const size_t length() const;
+
   /**
    * Reads an arithmetic `T` at `position` in the buffer, swapping
    * endainness as required.

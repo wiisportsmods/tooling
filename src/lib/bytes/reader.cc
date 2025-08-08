@@ -4,6 +4,10 @@
 
 #include "absl/log/log.h"
 
+const size_t byte_reader::length() const {
+  return _len;
+}
+
 void byte_reader::swap_endianness() {
   // Swap from system to non-system endianness if
   // none is already specified. Useful if reading a `BOM`

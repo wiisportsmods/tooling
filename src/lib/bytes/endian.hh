@@ -28,12 +28,11 @@ T as_correct_endianness(
   Endianness desired,
   T value
 ) {
+  static_assert(sizeof(T) == 1 || sizeof(T) % 2 == 0);
+  
   if (!_should_swap(desired) || sizeof(T) == 1) {
     return value;
   }
-
-  // Should be true, but just in case.
-  static_assert(sizeof(T) % 2 == 0);
 
   union {
     T ty;

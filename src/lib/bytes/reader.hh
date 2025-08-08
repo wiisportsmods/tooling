@@ -76,7 +76,7 @@ public:
    * Asserts that there is no out of bounds reading happening.
    */
   template <typename T> 
-  T read(const size_t position) {
+  T read(const size_t position) const {
     static_assert(std::is_arithmetic<T>::value, "T must be a fundamental value");
 
     const size_t size = sizeof(T);
@@ -104,7 +104,7 @@ public:
    * Asserts there is no out of bounds reading happening.
    */
   template <typename T>
-  T* span(const size_t position, const size_t len) {
+  T* span(const size_t position, const size_t len) const {
     const size_t size = sizeof(T);
 
     CHECK(position + size <= _len)  
@@ -115,7 +115,7 @@ public:
     return span;
   }
     
-  size_t length();
+  const size_t length() const;
 
   void swap_endianness();
 };
