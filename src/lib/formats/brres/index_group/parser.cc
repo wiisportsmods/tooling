@@ -96,11 +96,17 @@ std::vector<std::reference_wrapper<node>> parser::consume_internal(
 
       children.emplace_back(std::ref(_folders.back()));
     } else {
+      // Read the sub-file size from the reader.
+      uint32_t sub_file_size = _reader.read<uint32_t>(
+        offset + group.get(&IndexGroup::data_ptr) + sizeof(char[4])
+      );
+
       // Otherwise, it is pointing outside of the root section (and hence to 
       // a data entry).
       _files.emplace_back(
         name,
-        offset + group.get(&IndexGroup::data_ptr)
+        offset + group.get(&IndexGroup::data_ptr),
+        sub_file_size
       );
 
       children.emplace_back(std::ref(_files.back()));
