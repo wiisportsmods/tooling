@@ -104,7 +104,7 @@ public:
    * Asserts there is no out of bounds reading happening.
    */
   template <typename T>
-  T* span(const size_t position, const size_t len) const {
+  std::span<T> span(const size_t position, const size_t len) const {
     const size_t size = sizeof(T);
 
     CHECK(position + size <= _len)  
