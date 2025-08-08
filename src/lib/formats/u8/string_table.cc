@@ -6,12 +6,12 @@ std::string string_table::copy(const int32_t offset) const {
 
   while(true) {
     char c = _reader.read<char>(_base_offset + offset + i);
-    stream << c;
 
     if (c == '\0') {
       break;
     }
 
+    stream << c;
     i++;
   }
 
