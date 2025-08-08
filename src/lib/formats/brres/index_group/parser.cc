@@ -51,10 +51,10 @@ std::vector<std::reference_wrapper<node>> parser::consume_internal(
   // The number of bytes this group consists of.
   uint32_t byte_size = header.get(&IndexGroupHeader::byte_length);
 
-  DLOG(INFO) << "Consuming group" << "\n"
-    << "byte_size(" << byte_size << ")" << "\n"
-    << "count(" << count << ")" << "\n"
-    << "offset(" << offset << ")";
+  // DLOG(INFO) << "Consuming group" << "\n"
+  //   << "byte_size(" << byte_size << ")" << "\n"
+  //   << "count(" << count << ")" << "\n"
+  //   << "offset(" << offset << ")";
 
   // Read the groups as an array.
   struct_array<IndexGroup> groups = _reader.read<IndexGroup[]>(
@@ -75,13 +75,13 @@ std::vector<std::reference_wrapper<node>> parser::consume_internal(
       group.get(&IndexGroup::name_ptr)
     );
 
-    DLOG(INFO) << "IndexGroup(\"" << name << "\")" << "\n"
-      << "\t" << "flag(" << group.get(&IndexGroup::flag) << ")" << "\n"
-      << "\t" << "left_idx(" << group.get(&IndexGroup::left_index) << ")" << "\n"
-      << "\t" << "right_idx(" << group.get(&IndexGroup::right_index) << ")" << "\n"
-      << "\t" << "entry_id(" << group.get(&IndexGroup::entry_id) << ")" << "\n"
-      << "\t" << "name_ptr(" << group.get(&IndexGroup::name_ptr) << ")" << "\n"
-      << "\t" << "data_ptr(" << group.get(&IndexGroup::data_ptr) << ")";
+    // DLOG(INFO) << "IndexGroup(\"" << name << "\")" << "\n"
+    //   << "\t" << "flag(" << group.get(&IndexGroup::flag) << ")" << "\n"
+    //   << "\t" << "left_idx(" << group.get(&IndexGroup::left_index) << ")" << "\n"
+    //   << "\t" << "right_idx(" << group.get(&IndexGroup::right_index) << ")" << "\n"
+    //   << "\t" << "entry_id(" << group.get(&IndexGroup::entry_id) << ")" << "\n"
+    //   << "\t" << "name_ptr(" << group.get(&IndexGroup::name_ptr) << ")" << "\n"
+    //   << "\t" << "data_ptr(" << group.get(&IndexGroup::data_ptr) << ")";
 
     int32_t data_ptr = group.get(&IndexGroup::data_ptr);
     size_t data_offset = offset + data_ptr;
