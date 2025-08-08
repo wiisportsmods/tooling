@@ -24,7 +24,14 @@ folder parser::consume() {
   // Create a fake folder called "(root)" to act as the root,
   // and then call the recursive implementation to produce the
   // tree structure.
-  return folder("(root)", consume_internal(_base_offset));
+  return consume("(root)");
+}
+
+folder parser::consume(const std::string root_folder_name) {
+  return folder(
+    root_folder_name, 
+    consume_internal(_base_offset)
+  );
 }
 
 std::vector<std::reference_wrapper<node>> parser::consume_internal(

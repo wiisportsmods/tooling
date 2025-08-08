@@ -65,6 +65,12 @@ public:
   folder consume();
 
   /**
+   * Consumes the data at `base_offset`, parsing it to `node`s in a directory
+   * structure.
+   */
+  folder consume(const std::string root_folder_name);
+
+  /**
    * All the `data` nodes in the entire filesystem.
    * 
    * Empty until `consume` is called.
