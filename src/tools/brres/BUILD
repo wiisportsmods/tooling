@@ -1,5 +1,5 @@
 cc_binary(
-  name = "brres-analyser",
+  name = "brres",
   srcs = ["main.cc"],
   deps = [
     "//src/lib/bytes",

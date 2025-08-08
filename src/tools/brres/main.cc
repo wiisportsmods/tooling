@@ -13,10 +13,23 @@
 
 #include "lib/formats/brres/index_group/parser.hh"
 #include "lib/formats/brres/index_group/nodes/node.hh"
+#include "lib/formats/brres/index_group/nodes/data.hh"
+#include "lib/formats/brres/index_group/nodes/folder.hh"
 #include "lib/formats/brres/index_group/repr.hh"
 #include "lib/formats/brres/types.hh"
 
 #include "types.hh"
+
+/**
+ * Writes a node `curr` to the filesystem
+ * at `base`.
+ */
+void write(
+  const byte_reader& reader,
+  const std::filesystem::path base,
+  const node& curr,
+  const std::filesystem::path path
+);
 
 /**
  * Format a number of `bytes` as a string w/ units.
@@ -37,9 +50,12 @@ int main(
   int argc,
   char** argv
 ) {
-  CHECK(argc == 2) << "Invalid usage";
+  CHECK(argc == 3) << "Invalid usage";
 
-  std::string source(argv[1]);
+  std::filesystem::path input(argv[1]);
+  std::filesystem::path output(argv[2]);
+
+  std::string source(input);
 
   LOG(INFO) << "Opening " << source << 
     "(cwd=" << std::filesystem::current_path() << ")";
@@ -121,8 +137,54 @@ int main(
     (size_t)root_header.get<uint32_t>(&RootSectionHeader::byte_length)
   );
 
-  folder brres_root = index_group_parser.consume();
+  
+  folder brres_root = index_group_parser.consume(
+    input.filename().string() + ".out"
+  );
   
   // Show the tree of files.
   LOG(INFO) << repr(brres_root, reader);
+
+  LOG(INFO) << "Cleaning " << output;
+  std::filesystem::remove_all(output);
+  std::filesystem::create_directory(output);
+
+  LOG(INFO) << "Writing " << output;
+
+  write(binary, output, brres_root, output);
+}
+
+void write(
+  const byte_reader& reader,
+  const std::filesystem::path base,
+  const node& curr,
+  const std::filesystem::path path
+) {
+  try {
+    const data& f = dynamic_cast<const data&>(curr);
+
+    const std::filesystem::path dir(path / f.name());
+    LOG(INFO) << "Creating file " << dir.lexically_relative(base);
+
+    std::ofstream file(dir);
+    std::span<char> span = reader.span<char>(f.offset(), f.size());
+
+    file.write(span.data(), span.size());
+  } catch (std::bad_cast& e) {}
+
+  try {
+    const folder& f = dynamic_cast<const folder&>(curr);
+
+    const std::filesystem::path dir(path / f.name());
+
+    LOG(INFO) << "Creating dir  " << dir.lexically_relative(base);
+
+    if (!std::filesystem::is_directory(dir)) {
+      std::filesystem::create_directories(dir);
+    }
+
+    for(const auto& child : f.children()) {
+      write(reader, base, child, dir);
+    }
+  } catch (std::bad_cast& e) {}
 }
