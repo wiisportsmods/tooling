@@ -110,7 +110,7 @@ void write(
     const file& f = dynamic_cast<const file&>(curr);
 
     const std::filesystem::path dir(path / f.name());
-    LOG(INFO) << "Creating file " << dir;
+    LOG(INFO) << "Creating file " << dir.lexically_relative(base);
 
     std::ofstream file(dir);
     std::span<char> span = reader.span<char>(f.offset(), f.size());
@@ -123,7 +123,7 @@ void write(
 
     const std::filesystem::path dir(path / f.name());
 
-    LOG(INFO) << "Creating directory " << dir;
+    LOG(INFO) << "Creating dir  " << dir.lexically_relative(base);
 
     if (!std::filesystem::is_directory(dir)) {
       std::filesystem::create_directories(dir);
