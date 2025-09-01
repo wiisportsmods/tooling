@@ -1,9 +1,9 @@
 #include "parser.hh"
 #include "types.hh"
 
-#include "nodes/node.hh"
-#include "nodes/folder.hh"
-#include "nodes/data.hh"
+#include "lib/fs/nodes/node.hh"
+#include "lib/fs/nodes/folder.hh"
+#include "lib/fs/nodes/file.hh"
 
 #include "absl/log/log.h"
 
@@ -20,21 +20,21 @@ bool parser::is_group(size_t offset) {
   return offset <= (*_length);
 }
 
-folder parser::consume() {
+std::unique_ptr<folder> parser::consume() {
   // Create a fake folder called "(root)" to act as the root,
   // and then call the recursive implementation to produce the
   // tree structure.
   return consume("(root)");
 }
 
-folder parser::consume(const std::string root_folder_name) {
-  return folder(
+std::unique_ptr<folder> parser::consume(const std::string root_folder_name) {
+  return std::make_unique<folder>(
     root_folder_name, 
     consume_internal(_base_offset)
   );
 }
 
-std::vector<std::reference_wrapper<node>> parser::consume_internal(
+std::vector<std::unique_ptr<node>> parser::consume_internal(
   size_t offset
 ) {
   // Read the header to know how many members to expect.
@@ -51,10 +51,10 @@ std::vector<std::reference_wrapper<node>> parser::consume_internal(
   // The number of bytes this group consists of.
   uint32_t byte_size = header.get(&IndexGroupHeader::byte_length);
 
-  // DLOG(INFO) << "Consuming group" << "\n"
-  //   << "byte_size(" << byte_size << ")" << "\n"
-  //   << "count(" << count << ")" << "\n"
-  //   << "offset(" << offset << ")";
+  VLOG(4) << "Consuming group" << "\n"
+    << "byte_size(" << byte_size << ")" << "\n"
+    << "count(" << count << ")" << "\n"
+    << "offset(" << offset << ")";
 
   // Read the groups as an array.
   struct_array<IndexGroup> groups = _reader.read<IndexGroup[]>(
@@ -62,8 +62,8 @@ std::vector<std::reference_wrapper<node>> parser::consume_internal(
   );
 
   // We know there will be `count` children, so create a vector of
-  // `count` `reference_wrapper<node>`s ahead of time.
-  std::vector<std::reference_wrapper<node>> children;
+  // `count` `unique_ptr<node>`s ahead of time.
+  std::vector<std::unique_ptr<node>> children;
   children.reserve(count);
 
   // Skip the first one, as that is a special value to provide the binary
@@ -75,13 +75,13 @@ std::vector<std::reference_wrapper<node>> parser::consume_internal(
       group.get(&IndexGroup::name_ptr)
     );
 
-    // DLOG(INFO) << "IndexGroup(\"" << name << "\")" << "\n"
-    //   << "\t" << "flag(" << group.get(&IndexGroup::flag) << ")" << "\n"
-    //   << "\t" << "left_idx(" << group.get(&IndexGroup::left_index) << ")" << "\n"
-    //   << "\t" << "right_idx(" << group.get(&IndexGroup::right_index) << ")" << "\n"
-    //   << "\t" << "entry_id(" << group.get(&IndexGroup::entry_id) << ")" << "\n"
-    //   << "\t" << "name_ptr(" << group.get(&IndexGroup::name_ptr) << ")" << "\n"
-    //   << "\t" << "data_ptr(" << group.get(&IndexGroup::data_ptr) << ")";
+    VLOG(4) << "IndexGroup(\"" << name << "\")" << "\n"
+      << "\t" << "flag(" << group.get(&IndexGroup::flag) << ")" << "\n"
+      << "\t" << "left_idx(" << group.get(&IndexGroup::left_index) << ")" << "\n"
+      << "\t" << "right_idx(" << group.get(&IndexGroup::right_index) << ")" << "\n"
+      << "\t" << "entry_id(" << group.get(&IndexGroup::entry_id) << ")" << "\n"
+      << "\t" << "name_ptr(" << group.get(&IndexGroup::name_ptr) << ")" << "\n"
+      << "\t" << "data_ptr(" << group.get(&IndexGroup::data_ptr) << ")";
 
     int32_t data_ptr = group.get(&IndexGroup::data_ptr);
     size_t data_offset = offset + data_ptr;
@@ -89,37 +89,23 @@ std::vector<std::reference_wrapper<node>> parser::consume_internal(
     // If it's within the bounds specified by the `root` section,
     // then this data entry must be another group. Treat it as one.
     if (is_group(data_offset)) {
-      _folders.emplace_back(
+      children.emplace_back(std::make_unique<folder>(
         name,
         consume_internal(data_offset)
-      );
-
-      children.emplace_back(std::ref(_folders.back()));
+      ));
     } else {
       // Read the sub-file size from the reader.
       uint32_t sub_file_size = _reader.read<uint32_t>(
         offset + group.get(&IndexGroup::data_ptr) + sizeof(char[4])
       );
 
-      // Otherwise, it is pointing outside of the root section (and hence to 
-      // a data entry).
-      _files.emplace_back(
+      children.emplace_back(std::make_unique<file>(
         name,
         offset + group.get(&IndexGroup::data_ptr),
         sub_file_size
-      );
-
-      children.emplace_back(std::ref(_files.back()));
+      ));
     } 
   }
 
   return children;
-}
-
-const std::list<data>& parser::files() const {
-  return _files;
-}
-
-const std::list<folder>& parser::folders() const {
-  return _folders;
 }

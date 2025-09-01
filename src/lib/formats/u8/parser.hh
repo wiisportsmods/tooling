@@ -17,16 +17,13 @@
 class parser {
   const typed_reader& _reader;
 
-  std::list<folder> _folders;
-  std::list<file> _files;
-
-  folder& build_from_reverse_relationships(
+  std::unique_ptr<node> build_from_reverse_relationships(
     struct_array<Node>& nodes,
     const string_table& table,
     const std::unordered_multimap<size_t, size_t>& reverse_relationships
   );
 
-  node& build_from_reverse_relationships(
+  std::unique_ptr<node> build_from_reverse_relationships(
     struct_array<Node>& nodes,
     const string_table& table,
     const std::unordered_multimap<size_t, size_t>& reverse_relationships,
@@ -38,7 +35,7 @@ public:
     const typed_reader& reader
   ) : _reader(reader) {}
 
-  folder& consume();
+  std::unique_ptr<node> consume();
 };
 
 #endif /* _LIB_FORMATS_U8_READER_HH */

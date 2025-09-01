@@ -2,21 +2,18 @@
 #define _LIB_FORMATS_BRRES_PARSER_HH
 
 #include <list>
+#include <memory>
 
 #include "lib/bytes/typed_reader.hh"
 #include "lib/formats/brres/string_table.hh"
 
-#include "nodes/data.hh"
-#include "nodes/folder.hh"
-
+#include "lib/fs/nodes/node.hh"
+#include "lib/fs/nodes/folder.hh"
 
 class parser {
   const typed_reader& _reader;
   const size_t _base_offset;
   const std::optional<size_t> _length;
-
-  std::list<folder> _folders;
-  std::list<data> _files;
 
 private:
   /**
@@ -27,7 +24,7 @@ private:
    * @param offset The offset this group starts at.
    * @returns A vector of references to nodes, the direct children of the current node.
    */
-  std::vector<std::reference_wrapper<node>> consume_internal(size_t offset);
+  std::vector<std::unique_ptr<node>> consume_internal(size_t offset);
 
   /**
    * Returns true if the relative `offset` (relative to `_base_offset`)
@@ -62,27 +59,13 @@ public:
    * Consumes the data at `base_offset`, parsing it to `node`s in a directory
    * structure.
    */
-  folder consume();
+  std::unique_ptr<folder> consume();
 
   /**
    * Consumes the data at `base_offset`, parsing it to `node`s in a directory
    * structure.
    */
-  folder consume(const std::string root_folder_name);
-
-  /**
-   * All the `data` nodes in the entire filesystem.
-   * 
-   * Empty until `consume` is called.
-   */
-  const std::list<data>& files() const;
-
-  /**
-   * All the `folder` nodes in the entire filesystem.
-   * 
-   * Empty until `consume` is called.
-   */
-  const std::list<folder>& folders() const;
+  std::unique_ptr<folder> consume(const std::string root_folder_name);
 };
 
 
