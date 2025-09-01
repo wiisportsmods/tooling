@@ -1,7 +1,7 @@
 #ifndef _LIB_BYTES_ENDIAN_H
 #define _LIB_BYTES_ENDIAN_H
 
-#include <type_traits>
+#include <cstddef>
 
 /**
  * The possible endianness that we support.

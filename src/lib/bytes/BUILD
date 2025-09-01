@@ -14,8 +14,8 @@ cc_library(
   strip_include_prefix = "/src",
   visibility = ["//visibility:public"],
   deps = [
-    "@com_google_absl//absl/log",
-    "@com_google_absl//absl/log:check",
+    "@abseil-cpp//absl/log",
+    "@abseil-cpp//absl/log:check",
     ":stdlib",
   ],
 )

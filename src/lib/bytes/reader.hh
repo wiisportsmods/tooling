@@ -5,7 +5,7 @@
 
 #include "endian.hh"
 
-#include <stddef.h>
+#include <cstddef>
 #include <optional>
 #include <span>
 #include <memory>
