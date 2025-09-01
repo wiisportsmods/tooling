@@ -1,31 +1,26 @@
 #ifndef _LIB_VERSION_HH
 #define _LIB_VERSION_HH
 
-#include <inttypes.h>
-#include <string>
+#define __STR_HELPER(X) #X
+#define __STR(X) __STR_HELPER(X)
 
-#include "absl/strings/str_format.h"
+#ifndef VERSION_MAJOR
+  #define VERSION_MAJOR 0
+#endif
 
-namespace version {
-  static const uint16_t major = 0;
-  static const uint16_t minor = 0;
-  static const uint16_t revision = 0;
+#ifndef VERSION_MINOR
+  #define VERSION_MINOR 0
+#endif
 
-  #ifndef RELEASE_STREAM
-    static const char* release_stream = "dev";
-  #else
-    static const char* release_stream = "RELEASE_STREAM";
-  #endif
+#ifndef VERSION_REV
+  #define VERSION_REV 0
+#endif
 
-  inline std::string str() {
-    return absl::StrFormat(
-      "%d.%d-%d#%s",
-      major,
-      minor,
-      revision,
-      release_stream
-    );
-  }
-}
+#ifndef VERSION_RELEASE_STREAM
+  #define VERSION_RELEASE_STREAM "dev"
+#endif
+
+#define VERSION_STR __STR(VERSION_MAJOR) "." __STR(VERSION_MINOR) "." __STR(VERSION_REV) "#" __STR(VERSION_RELEASE_STREAM)
+
 
 #endif /* _LIB_VERSION_HH */
