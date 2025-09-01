@@ -12,24 +12,12 @@
 #include "lib/bytes/array/basic.hh"
 
 #include "lib/formats/brres/index_group/parser.hh"
-#include "lib/formats/brres/index_group/nodes/node.hh"
-#include "lib/formats/brres/index_group/nodes/data.hh"
-#include "lib/formats/brres/index_group/nodes/folder.hh"
-#include "lib/formats/brres/index_group/repr.hh"
 #include "lib/formats/brres/types.hh"
 
-#include "types.hh"
+#include "lib/fs/repr.hh"
+#include "lib/fs/dump.hh"
 
-/**
- * Writes a node `curr` to the filesystem
- * at `base`.
- */
-void write(
-  const byte_reader& reader,
-  const std::filesystem::path base,
-  const node& curr,
-  const std::filesystem::path path
-);
+#include "types.hh"
 
 /**
  * Format a number of `bytes` as a string w/ units.
@@ -136,14 +124,9 @@ int main(
     root_section_offset + sizeof(RootSectionHeader),
     (size_t)root_header.get<uint32_t>(&RootSectionHeader::byte_length)
   );
-
-  
-  folder brres_root = index_group_parser.consume(
-    input.filename().string() + ".out"
-  );
   
   // Show the tree of files.
-  LOG(INFO) << repr(brres_root, reader);
+  // LOG(INFO) << repr(brres_root, reader);
 
   LOG(INFO) << "Cleaning " << output;
   std::filesystem::remove_all(output);
@@ -151,40 +134,11 @@ int main(
 
   LOG(INFO) << "Writing " << output;
 
-  write(binary, output, brres_root, output);
-}
-
-void write(
-  const byte_reader& reader,
-  const std::filesystem::path base,
-  const node& curr,
-  const std::filesystem::path path
-) {
-  try {
-    const data& f = dynamic_cast<const data&>(curr);
-
-    const std::filesystem::path dir(path / f.name());
-    LOG(INFO) << "Creating file " << dir.lexically_relative(base);
-
-    std::ofstream file(dir);
-    std::span<char> span = reader.span<char>(f.offset(), f.size());
-
-    file.write(span.data(), span.size());
-  } catch (std::bad_cast& e) {}
-
-  try {
-    const folder& f = dynamic_cast<const folder&>(curr);
-
-    const std::filesystem::path dir(path / f.name());
-
-    LOG(INFO) << "Creating dir  " << dir.lexically_relative(base);
-
-    if (!std::filesystem::is_directory(dir)) {
-      std::filesystem::create_directories(dir);
-    }
-
-    for(const auto& child : f.children()) {
-      write(reader, base, child, dir);
-    }
-  } catch (std::bad_cast& e) {}
+  dump(
+    binary,
+    output,
+    index_group_parser.consume(
+      input.filename().string() + ".out"
+    )
+  );
 }

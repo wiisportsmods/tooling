@@ -3,9 +3,12 @@ cc_binary(
   srcs = ["main.cc"],
   deps = [
     "//src/lib/bytes",
+    "//src/lib/fs",
     "//src/lib/formats/u8",
     "//src/lib/compression/yaz0",
-    "@com_google_absl//absl/log",
-    "@com_google_absl//absl/log:check",
+    "@abseil-cpp//absl/log",
+    "@abseil-cpp//absl/log:check",
+    "@abseil-cpp//absl/log:flags",
+    "@abseil-cpp//absl/flags:parse",
   ],
 )

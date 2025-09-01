@@ -1,30 +1,30 @@
 #include <fstream>
 #include <filesystem>
+#include <iostream>
+
 #include <stdlib.h>
 
+#include "absl/flags/parse.h"
+#include "absl/flags/flag.h"
+
 #include "absl/log/log.h"
+#include "absl/log/flags.h"
 #include "absl/log/check.h"
 #include "absl/strings/str_format.h"
 
 #include "lib/bytes/reader.hh"
 #include "lib/bytes/typed_reader.hh"
 
-#include "lib/formats/u8/parser.hh"
-#include "lib/formats/u8/nodes/folder.hh"
-#include "lib/formats/u8/repr.hh"
-
 #include "lib/compression/yaz0/parser.hh"
 
+#include "lib/formats/u8/parser.hh"
+
+#include "lib/fs/dump.hh"
+#include "lib/fs/repr.hh"
+#include "lib/fs/nodes/node.hh"
+
+
 #include "types.hh"
-
-#include <iostream>
-
-void write(
-  const byte_reader& reader,
-  const std::filesystem::path base,
-  const node& curr,
-  const std::filesystem::path path
-);
 
 /**
  * Format a number of `bytes` as a string w/ units.
@@ -45,7 +45,9 @@ int main(
   int argc,
   char** argv
 ) {
-  CHECK(argc == 3) << "Invalid usage";
+  absl::ParseCommandLine(argc, argv);
+
+  CHECK(argc >= 3) << "Invalid usage";
 
   std::string source(argv[1]);
   std::string destination(argv[2]);
@@ -85,8 +87,10 @@ int main(
 
   LOG(INFO) << "Parsing";
 
-  parser u8_parser(u8_reader);
-  folder& root = u8_parser.consume();
+  typed_reader reader(u8_reader);
+  parser u8_parser(reader);
+
+  std::unique_ptr<node> root = u8_parser.consume();
 
   LOG(INFO) << repr(root);
 
@@ -97,40 +101,10 @@ int main(
   std::filesystem::create_directory(base_dir);
 
   LOG(INFO) << "Writing " << destination;
-  write(u8_reader, destination, root, destination);
-}
 
-void write(
-  const byte_reader& reader,
-  const std::filesystem::path base,
-  const node& curr,
-  const std::filesystem::path path
-) {
-  try {
-    const file& f = dynamic_cast<const file&>(curr);
-
-    const std::filesystem::path dir(path / f.name());
-    LOG(INFO) << "Creating file " << dir.lexically_relative(base);
-
-    std::ofstream file(dir);
-    std::span<char> span = reader.span<char>(f.offset(), f.size());
-
-    file.write(span.data(), span.size());
-  } catch (std::bad_cast& e) {}
-
-  try {
-    const folder& f = dynamic_cast<const folder&>(curr);
-
-    const std::filesystem::path dir(path / f.name());
-
-    LOG(INFO) << "Creating dir  " << dir.lexically_relative(base);
-
-    if (!std::filesystem::is_directory(dir)) {
-      std::filesystem::create_directories(dir);
-    }
-
-    for(const auto& child : f.children()) {
-      write(reader, base, child, dir);
-    }
-  } catch (std::bad_cast& e) {}
+  dump(
+    u8_reader,
+    destination,
+    root
+  );
 }

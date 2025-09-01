@@ -1,6 +1,7 @@
 #include <fstream>
 #include <filesystem>
 #include <stdlib.h>
+#include <iostream>
 
 #include "absl/log/log.h"
 #include "absl/log/check.h"
@@ -12,15 +13,12 @@
 #include "lib/bytes/array/basic.hh"
 
 #include "lib/formats/brres/index_group/parser.hh"
-#include "lib/formats/brres/index_group/nodes/node.hh"
-#include "lib/formats/brres/index_group/nodes/data.hh"
-#include "lib/formats/brres/index_group/nodes/folder.hh"
 #include "lib/formats/brres/index_group/repr.hh"
 #include "lib/formats/brres/types.hh"
 
 #include "lib/formats/mdl0/types.hh"
 
-#include "types.hh"
+#include "lib/fs/repr.hh"
 
 int main(
   int argc,
@@ -29,13 +27,11 @@ int main(
   CHECK(argc == 2) << "Invalid usage";
 
   std::filesystem::path input(argv[1]);
-  std::string source(input);
 
-  LOG(INFO) << "Opening " << source << 
+  LOG(INFO) << "Opening " << input << 
     "(cwd=" << std::filesystem::current_path() << ")";
   
-  std::ifstream file(source);
-
+  std::ifstream file(input);
   CHECK(file.is_open()) << "Failed to open file (errno=" << errno << ", msg='" << strerror(errno) << "')"; 
 
   file.seekg(0, std::ios::end);
@@ -48,25 +44,17 @@ int main(
   CHECK(buffer != nullptr) << "Failed to allocate buffer";
 
   buffer[len] = '\0';
-
   file.read(buffer.get(), len);
 
   // Create readers over the binary.
   byte_reader binary(std::move(buffer), len);
-
   typed_reader reader(binary);
-  {
-    basic_array<char> magic_reader = reader.read<char[]>(0);
 
-    char magic[4] = {
-      magic_reader.at(0),
-      magic_reader.at(1),
-      magic_reader.at(2),
-      magic_reader.at(3)
-    };
+  {
+    std::span<char> magic = binary.span<char>(0, 4);
 
     // `brres` files always start with `bres` in the first four bytes.
-    CHECK(memcmp(magic, "bres", 4) == 0)  << "Invalid file magic";
+    CHECK(memcmp(magic.data(), "bres", 4) == 0)  << "Invalid file magic";
   }
 
   // Read information about the file (bom, sections, offset to the root, etc).
@@ -110,29 +98,10 @@ int main(
   );
 
   
-  folder brres_root = index_group_parser.consume(
+  std::unique_ptr<node> brres_root = index_group_parser.consume(
     input.filename().string() + ".out"
   );
   
   // Show the tree of files.
   LOG(INFO) << repr(brres_root, reader);
-
- node& models = index_group_parser.folders()
-    .front()
-    .children()
-    .at(0)
-    .get();
-
-  auto d = reinterpret_cast<const data&>(models);
-
-  LOG(INFO) << d.offset();
-  struct_reader<MDL0FileHeader> mdl0_file_header = reader.read<MDL0FileHeader>(d.offset());
-
-  basic_array<int32_t> offsets = mdl0_file_header.get(&MDL0FileHeader::offsets);
-  for(int i = 0; i < 11; i++) {
-    parser index_group_mdl0_first_child(reader, d.offset() + offsets.at(i));
-    folder mdl0_root = index_group_mdl0_first_child.consume();
-
-    LOG(INFO) << absl::StrFormat("offset.at(%d): %s", i, repr(mdl0_root));
-  }
 }
