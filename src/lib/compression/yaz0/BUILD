@@ -15,9 +15,9 @@ cc_library(
   visibility = ["//visibility:public"],
   deps = [
     "//src/lib/bytes",
-    "@com_google_absl//absl/log:check",
-    "@com_google_absl//absl/log",
-    "@com_google_absl//absl/strings",
+    "@abseil-cpp//absl/log:check",
+    "@abseil-cpp//absl/log",
+    "@abseil-cpp//absl/strings",
     ":stdlib",
   ],
 )
