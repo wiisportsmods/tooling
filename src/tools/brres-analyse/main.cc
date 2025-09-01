@@ -13,12 +13,12 @@
 #include "lib/bytes/array/basic.hh"
 
 #include "lib/formats/brres/index_group/parser.hh"
-#include "lib/formats/brres/index_group/repr.hh"
 #include "lib/formats/brres/types.hh"
 
 #include "lib/formats/mdl0/types.hh"
 
 #include "lib/fs/repr.hh"
+#include "lib/size.hh"
 
 int main(
   int argc,
@@ -39,6 +39,7 @@ int main(
   file.seekg(0, std::ios::beg);
 
   CHECK(len != 0) << "Empty file";
+  LOG(INFO) << "File size: " << format_byte_size(len);
 
   std::unique_ptr<char[]> buffer = std::make_unique<char[]>(len + 1);
   CHECK(buffer != nullptr) << "Failed to allocate buffer";

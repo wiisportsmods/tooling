@@ -23,23 +23,10 @@
 #include "lib/fs/repr.hh"
 #include "lib/fs/nodes/node.hh"
 
+#include "lib/size.hh"
+
 
 #include "types.hh"
-
-/**
- * Format a number of `bytes` as a string w/ units.
- */
-std::string format_size(size_t byte_length) {
-  static const std::array<const std::string, 4> size_lookup = {"b", "kb", "mb", "gb"};
-
-  size_t index = 0;
-  while(byte_length > 1023) {
-    byte_length /= 1024;
-    index = std::min(index + 1, (size_t)3);
-  }
-
-  return absl::StrFormat("%d%s", byte_length, size_lookup[index]);
-}
 
 int main(
   int argc,
@@ -65,7 +52,7 @@ int main(
 
   CHECK(len != 0) << "Empty file";
   
-  LOG(INFO) << "File size: " << format_size(len);
+  LOG(INFO) << "File size: " << format_byte_size(len);
 
   std::unique_ptr<char[]> buffer = std::make_unique<char[]>(len + 1);
   CHECK(buffer != nullptr) << "Failed to allocate buffer";

@@ -14,7 +14,7 @@ cc_library(
   strip_include_prefix = "/src",
   visibility = ["//visibility:public"],
   deps = [
-    "@abseil-cpp//absl/strings",
     ":stdlib",
+    "@abseil-cpp//absl/strings:str_format",
   ],
 )

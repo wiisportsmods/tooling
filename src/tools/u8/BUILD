@@ -6,6 +6,7 @@ cc_binary(
     "//src/lib/fs",
     "//src/lib/formats/u8",
     "//src/lib/compression/yaz0",
+    "//src/lib",
     "@abseil-cpp//absl/log",
     "@abseil-cpp//absl/log:check",
     "@abseil-cpp//absl/log:flags",
